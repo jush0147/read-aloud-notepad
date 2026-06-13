@@ -9,8 +9,20 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 class EdgeTtsClient {
-    private val client = OkHttpClient.Builder().build()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+        .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+        .writeTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+        .build()
     private val TAG = "EdgeTtsClient"
+
+    private fun escapeXml(text: String): String {
+        return text.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&apos;")
+    }
 
     suspend fun synthesize(text: String, voiceName: String, rate: Float): ByteArray? {
         val requestId = UUID.randomUUID().toString().replace("-", "")
@@ -20,24 +32,34 @@ class EdgeTtsClient {
             .url(url)
             .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0")
             .header("Origin", "chrome-extension://jdiccldimpdaamgbidmimgbjjgcgchne")
+            .header("Pragma", "no-cache")
+            .header("Cache-Control", "no-cache")
             .build()
 
         // Convert speed rate float (e.g. 0.5f to 2.0f) to Edge TTS SSML percentage format
         val percent = Math.round((rate - 1.0f) * 100)
         val rateSign = if (percent >= 0) "+$percent%" else "$percent%"
         
+        val escapedText = escapeXml(text)
         val ssml = "<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='zh-TW'>" +
                 "<voice name='$voiceName'>" +
-                "<prosody pitch='+0Hz' rate='$rateSign'>$text</prosody>" +
+                "<prosody pitch='+0Hz' rate='$rateSign'>$escapedText</prosody>" +
                 "</voice>" +
                 "</speak>"
 
-        val configMessage = "Content-Type:application/json; charset=utf-8\r\n" +
+        val sdf = java.text.SimpleDateFormat("EEE MMM dd yyyy HH:mm:ss 'GMT+0000 (Coordinated Universal Time)'", java.util.Locale.US).apply {
+            timeZone = java.util.TimeZone.getTimeZone("UTC")
+        }
+        val timestamp = sdf.format(java.util.Date())
+
+        val configMessage = "X-Timestamp:$timestamp\r\n" +
+                "Content-Type:application/json; charset=utf-8\r\n" +
                 "Path:speech.config\r\n\r\n" +
                 "{\"context\":{\"synthesis\":{\"audio\":{\"metadataoptions\":{\"sentenceBoundaryEnabled\":\"false\",\"wordBoundaryEnabled\":\"true\"},\"outputFormat\":\"audio-24khz-48kbps-truesilk-multipage-mp3\"}}}}"
 
         val ssmlMessage = "X-RequestId:$requestId\r\n" +
                 "Content-Type:application/ssml+xml\r\n" +
+                "X-Timestamp:$timestamp\r\n" +
                 "Path:ssml\r\n\r\n" +
                 ssml
 

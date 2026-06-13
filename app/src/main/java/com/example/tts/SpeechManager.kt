@@ -307,6 +307,14 @@ class SpeechManager(private val context: Context) : TextToSpeech.OnInitListener 
         val isEdgeVoice = _selectedVoice.value?.id?.contains("Neural") == true
         if (!isEdgeVoice && !_isInitialized.value) return
 
+        if (isEdgeVoice) {
+            try {
+                android.widget.Toast.makeText(context, "正在連接微軟高品質網路語音...", android.widget.Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                // ignore in non-UI context if any
+            }
+        }
+
         _isPlaying.value = true
         speakCurrentSegment()
     }
@@ -352,12 +360,22 @@ class SpeechManager(private val context: Context) : TextToSpeech.OnInitListener 
                     } else {
                         // Fallback to local
                         scope.launch(Dispatchers.Main) {
+                            try {
+                                android.widget.Toast.makeText(context, "微軟語音合成失敗，已自動切換回本機語音", android.widget.Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                // ignore
+                            }
                             speakViaLocalEngine(segment.text)
                         }
                     }
                 } catch (e: Exception) {
                     Log.e(TAG, "Edge synthesis failed, falling back to local TTS", e)
                     scope.launch(Dispatchers.Main) {
+                        try {
+                            android.widget.Toast.makeText(context, "微軟語音錯誤: ${e.localizedMessage}，已自動切換回本機語音", android.widget.Toast.LENGTH_LONG).show()
+                        } catch (ex: Exception) {
+                            // ignore
+                        }
                         speakViaLocalEngine(segment.text)
                     }
                 }

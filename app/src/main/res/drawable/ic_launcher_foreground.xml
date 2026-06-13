@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    
+    <!-- Outer Safe-zone shadow hint (soft black) -->
+    <path
+        android:fillColor="#15000000"
+        android:pathData="M 32,26 L 76,26 A 6,6 0 0 1 82,32 L 82,76 A 6,6 0 0 1 76,82 L 32,82 A 6,6 0 0 1 26,76 L 26,32 A 6,6 0 0 1 32,26 Z" />
+
+    <!-- Notepad Page Body (Pure Elegant White with subtle offset for layered shadow) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 34,24 L 74,24 A 6,6 0 0 1 80,30 L 80,74 A 6,6 0 0 1 74,80 L 34,80 A 6,6 0 0 1 28,74 L 28,30 A 6,6 0 0 1 34,24 Z" />
+
+    <!-- Notepad Decorative Visual Binder Top Ring -->
+    <path
+        android:fillColor="#E0E6ED"
+        android:pathData="M 36,20 A 2,2 0 0 1 38,22 L 38,26 A 2,2 0 0 1 36,28 A 2,2 0 0 1 34,26 L 34,22 A 2,2 0 0 1 36,20 Z" />
+    <path
+        android:fillColor="#E0E6ED"
+        android:pathData="M 46,20 A 2,2 0 0 1 48,22 L 48,26 A 2,2 0 0 1 46,28 A 2,2 0 0 1 44,26 L 44,22 A 2,2 0 0 1 46,20 Z" />
+    <path
+        android:fillColor="#E0E6ED"
+        android:pathData="M 56,20 A 2,2 0 0 1 58,22 L 58,26 A 2,2 0 0 1 56,28 A 2,2 0 0 1 54,26 L 54,22 A 2,2 0 0 1 56,20 Z" />
+    <path
+        android:fillColor="#E0E6ED"
+        android:pathData="M 66,20 A 2,2 0 0 1 68,22 L 68,26 A 2,2 0 0 1 66,28 A 2,2 0 0 1 64,26 L 64,22 A 2,2 0 0 1 66,20 Z" />
+    <path
+        android:fillColor="#E0E6ED"
+        android:pathData="M 72,20 A 2,2 0 0 1 74,22 L 74,26 A 2,2 0 0 1 72,28 A 2,2 0 0 1 70,26 L 70,22 A 2,2 0 0 1 72,20 Z" />
+
+    <!-- Document Decorative Text Lines (Fluent Blue Theme Accent) -->
+    <path
+        android:fillColor="#47A2FF"
+        android:pathData="M 38,36 H 70 V 39 H 38 Z" />
+    <path
+        android:fillColor="#90C5FF"
+        android:pathData="M 38,44 H 64 V 47 H 38 Z" />
+    <path
+        android:fillColor="#90C5FF"
+        android:pathData="M 38,52 H 70 V 55 H 38 Z" />
+    <path
+        android:fillColor="#CFE5FF"
+        android:pathData="M 38,60 H 58 V 63 H 38 Z" />
+
+    <!-- Sound Speaker / Sound Wave Emblem overlay near the bottom-right safely (Contrast Orange-Gold color scheme) -->
+    <!-- Speak circular badge backdrop -->
+    <path
+        android:fillColor="#FFD335"
+        android:pathData="M 72,72 A 16,16 0 1 1 72,40 A 16,16 0 1 1 72,72" />
+
+    <!-- Speaker cone silhouette in high contrast dark -->
+    <path
+        android:fillColor="#151A25"
+        android:pathData="M 59,51 H 61 L 64,48 V 58 L 61,55 H 59 Z" />
+
+    <!-- Audio concentric wave lines -->
+    <path
+        android:strokeColor="#151A25"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M 67,49 A 4.5,4.5 0 0 1 67,57" />
+    <path
+        android:strokeColor="#151A25"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M 69.5,46.5 A 8,8 0 0 1 69.5,59.5" />
+</vector>

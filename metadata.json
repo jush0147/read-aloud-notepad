@@ -1,0 +1,6 @@
+{
+  "name": "朗讀記事本",
+  "description": "一個簡單的記事本，支援一鍵貼上、高音質微軟風格 TTS 語音朗讀、語速調整、即時單字朗讀標記與深色模式切換。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

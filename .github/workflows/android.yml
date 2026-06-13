@@ -3,7 +3,7 @@ name: Android CI Build
 on:
   push:
     branches:
-      - '**' # 支援所有分支的 Push
+      - '**'
   pull_request:
     branches:
       - '**'
@@ -17,34 +17,36 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Set up JDK 17
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
-        cache: 'gradle'
+        java-version: '21'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
+    - name: Convert CRLF to LF for gradlew
+      run: |
+        sed -i -e 's/\r$//' gradlew
+        chmod +x gradlew
 
     - name: Decode Debug Keystore
       run: |
         if [ -f debug.keystore.base64 ]; then
           echo "正在解碼內建的 debug.keystore.base64..."
-          base64 -d debug.keystore.base64 > debug.keystore
+          base64 -d debug.keystore.base64 > debug.keystore || base64 --decode debug.keystore.base64 > debug.keystore
         else
           echo "找不到 debug.keystore.base64，正在現場生成 debug 密鑰庫..."
           keytool -genkey -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
         fi
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-
-    - name: Setup Gradle cache
-      uses: gradle/actions/setup-gradle@v3
-
     - name: Build Debug APK
-      run: ./gradlew assembleDebug
+      run: ./gradlew assembleDebug --no-daemon
 
     - name: Upload Debug APK Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ReadAloudNotepad-Debug-APK
         path: app/build/outputs/apk/debug/*.apk
+

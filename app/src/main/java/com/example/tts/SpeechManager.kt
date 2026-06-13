@@ -330,7 +330,11 @@ class SpeechManager(private val context: Context) : TextToSpeech.OnInitListener 
 
         if (isEdgeVoice && voice != null) {
             // Stop any active local TTS
-            tts?.stop()
+            try {
+                tts?.stop()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error stopping local TTS", e)
+            }
             
             val voiceId = voice.id
             val rateValue = _speechRate.value
@@ -360,8 +364,14 @@ class SpeechManager(private val context: Context) : TextToSpeech.OnInitListener 
             }
         } else {
             // Stop any active mediaplayer
-            mediaPlayer?.stop()
-            mediaPlayer?.reset()
+            try {
+                if (mediaPlayer?.isPlaying == true) {
+                    mediaPlayer?.stop()
+                }
+                mediaPlayer?.reset()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error resetting mediaPlayer in speakCurrentSegment", e)
+            }
             speakViaLocalEngine(segment.text)
         }
     }
@@ -376,7 +386,11 @@ class SpeechManager(private val context: Context) : TextToSpeech.OnInitListener 
             
             player.setOnPreparedListener {
                 _isPlaying.value = true
-                it.start()
+                try {
+                    it.start()
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error starting mediaPlayer in onPrepared", e)
+                }
             }
             
             player.setOnCompletionListener {
@@ -409,23 +423,27 @@ class SpeechManager(private val context: Context) : TextToSpeech.OnInitListener 
         if (!_isInitialized.value) return
         val index = _currentSegmentIndex.value
         
-        activeTts.setSpeechRate(_speechRate.value)
-        _selectedVoice.value?.let {
-            if (it.voiceObj != null) {
-                try {
-                    activeTts.setVoice(it.voiceObj)
-                } catch (e: Exception) {
+        try {
+            activeTts.setSpeechRate(_speechRate.value)
+            _selectedVoice.value?.let {
+                if (it.voiceObj != null) {
+                    try {
+                        activeTts.setVoice(it.voiceObj)
+                    } catch (e: Exception) {
+                        activeTts.setLanguage(it.locale)
+                    }
+                } else {
                     activeTts.setLanguage(it.locale)
                 }
-            } else {
-                activeTts.setLanguage(it.locale)
             }
+            
+            val params = android.os.Bundle().apply {
+                putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "SEGMENT_$index")
+            }
+            activeTts.speak(text, TextToSpeech.QUEUE_FLUSH, params, "SEGMENT_$index")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error speaking via local TTS engine", e)
         }
-        
-        val params = android.os.Bundle().apply {
-            putString(TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID, "SEGMENT_$index")
-        }
-        activeTts.speak(text, TextToSpeech.QUEUE_FLUSH, params, "SEGMENT_$index")
     }
 
     private fun playNextSegmentIfAny() {
@@ -442,10 +460,20 @@ class SpeechManager(private val context: Context) : TextToSpeech.OnInitListener 
 
     // Move to previous sentence segment
     fun previousSegment() {
-        mediaPlayer?.stop()
-        mediaPlayer?.reset()
+        try {
+            if (mediaPlayer?.isPlaying == true) {
+                mediaPlayer?.stop()
+            }
+            mediaPlayer?.reset()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error resetting mediaPlayer in previousSegment", e)
+        }
         val activeTts = tts ?: return
-        activeTts.stop()
+        try {
+            activeTts.stop()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping local TTS", e)
+        }
         val prevIdx = (_currentSegmentIndex.value - 1).coerceAtLeast(0)
         _currentSegmentIndex.value = prevIdx
         if (_isPlaying.value) {
@@ -461,10 +489,20 @@ class SpeechManager(private val context: Context) : TextToSpeech.OnInitListener 
 
     // Move to next sentence segment
     fun nextSegment() {
-        mediaPlayer?.stop()
-        mediaPlayer?.reset()
+        try {
+            if (mediaPlayer?.isPlaying == true) {
+                mediaPlayer?.stop()
+            }
+            mediaPlayer?.reset()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error resetting mediaPlayer in nextSegment", e)
+        }
         val activeTts = tts ?: return
-        activeTts.stop()
+        try {
+            activeTts.stop()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping local TTS", e)
+        }
         val nextIdx = (_currentSegmentIndex.value + 1).coerceAtMost(segments.lastIndex.coerceAtLeast(0))
         _currentSegmentIndex.value = nextIdx
         if (_isPlaying.value) {
@@ -479,26 +517,54 @@ class SpeechManager(private val context: Context) : TextToSpeech.OnInitListener 
     }
 
     fun pause() {
-        mediaPlayer?.pause()
-        tts?.stop()
+        try {
+            if (mediaPlayer?.isPlaying == true) {
+                mediaPlayer?.pause()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error pausing mediaPlayer", e)
+        }
+        try {
+            tts?.stop()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping local TTS in pause", e)
+        }
         _isPlaying.value = false
     }
 
     fun stop() {
-        mediaPlayer?.stop()
-        mediaPlayer?.reset()
-        tts?.stop()
+        try {
+            if (mediaPlayer?.isPlaying == true) {
+                mediaPlayer?.stop()
+            }
+            mediaPlayer?.reset()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error resetting mediaPlayer in stop", e)
+        }
+        try {
+            tts?.stop()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error stopping local TTS in stop", e)
+        }
         _isPlaying.value = false
         _currentHighlightRange.value = null
         _currentSegmentIndex.value = 0
     }
 
     fun shutdown() {
-        mediaPlayer?.release()
+        try {
+            mediaPlayer?.release()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error releasing mediaPlayer in shutdown", e)
+        }
         mediaPlayer = null
         tts?.let {
-            it.stop()
-            it.shutdown()
+            try {
+                it.stop()
+                it.shutdown()
+            } catch (e: Exception) {
+                Log.e(TAG, "Error shutting down local TTS", e)
+            }
         }
         tts = null
     }

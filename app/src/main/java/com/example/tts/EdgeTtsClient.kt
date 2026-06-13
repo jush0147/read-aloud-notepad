@@ -45,57 +45,77 @@ class EdgeTtsClient {
             var resumed = false
             val audioBuffer = ByteArrayOutputStream()
 
-            val webSocket = client.newWebSocket(request, object : WebSocketListener() {
-                override fun onOpen(webSocket: WebSocket, response: Response) {
-                    webSocket.send(configMessage)
-                    webSocket.send(ssmlMessage)
-                }
+            try {
+                val webSocket = client.newWebSocket(request, object : WebSocketListener() {
+                    override fun onOpen(webSocket: WebSocket, response: Response) {
+                        try {
+                            webSocket.send(configMessage)
+                            webSocket.send(ssmlMessage)
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error sending initial messages on WS open", e)
+                        }
+                    }
 
-                override fun onMessage(webSocket: WebSocket, text: String) {
-                    if (text.contains("Path:turn.end")) {
-                        webSocket.close(1000, "Done")
+                    override fun onMessage(webSocket: WebSocket, text: String) {
+                        if (text.contains("Path:turn.end")) {
+                            try {
+                                webSocket.close(1000, "Done")
+                            } catch (e: Exception) {
+                                Log.e(TAG, "Error closing websocket on turn end", e)
+                            }
+                            if (!resumed) {
+                                resumed = true
+                                continuation.resume(audioBuffer.toByteArray())
+                            }
+                        }
+                    }
+
+                    override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
+                        try {
+                            val data = bytes.toByteArray()
+                            if (data.size > 2) {
+                                // Extract headers length (Big Endian Short)
+                                val headerLength = (((data[0].toInt() and 0xFF) shl 8) or (data[1].toInt() and 0xFF))
+                                if (data.size >= 2 + headerLength) {
+                                    val headers = String(data, 2, headerLength, Charsets.UTF_8)
+                                    if (headers.contains("Path:audio")) {
+                                        val audioPayload = data.copyOfRange(2 + headerLength, data.size)
+                                        audioBuffer.write(audioPayload)
+                                    }
+                                }
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Error parsing binary webSocket message", e)
+                        }
+                    }
+
+                    override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
+                        Log.e(TAG, "WebSocket connection failed: ${t.message}", t)
+                        try {
+                            webSocket.close(1001, "Error")
+                        } catch (e: Exception) {
+                            // ignore or log
+                        }
+                        if (!resumed) {
+                            resumed = true
+                            continuation.resume(null)
+                        }
+                    }
+
+                    override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
                         if (!resumed) {
                             resumed = true
                             continuation.resume(audioBuffer.toByteArray())
                         }
                     }
+                })
+            } catch (e: Exception) {
+                Log.e(TAG, "Error creating and configuring webSocket connection", e)
+                if (!resumed) {
+                    resumed = true
+                    continuation.resume(null)
                 }
-
-                override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
-                    try {
-                        val data = bytes.toByteArray()
-                        if (data.size > 2) {
-                            // Extract headers length (Big Endian Short)
-                            val headerLength = (((data[0].toInt() and 0xFF) shl 8) or (data[1].toInt() and 0xFF))
-                            if (data.size >= 2 + headerLength) {
-                                val headers = String(data, 2, headerLength, Charsets.UTF_8)
-                                if (headers.contains("Path:audio")) {
-                                    val audioPayload = data.copyOfRange(2 + headerLength, data.size)
-                                    audioBuffer.write(audioPayload)
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error parsing binary webSocket message", e)
-                    }
-                }
-
-                override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                    Log.e(TAG, "WebSocket connection failed: ${t.message}", t)
-                    webSocket.close(1001, "Error")
-                    if (!resumed) {
-                        resumed = true
-                        continuation.resume(null)
-                    }
-                }
-
-                override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-                    if (!resumed) {
-                        resumed = true
-                        continuation.resume(audioBuffer.toByteArray())
-                    }
-                }
-            })
+            }
         }
     }
 }
